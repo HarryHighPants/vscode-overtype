@@ -16,6 +16,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 
         vscode.commands.registerCommand("type", typeCommand),
         vscode.commands.registerCommand("paste", pasteCommand),
+        vscode.commands.registerCommand("hardBackspace", backspaceCommand),
 
         vscode.window.onDidChangeActiveTextEditor(activeTextEditorChanged),
 
@@ -120,6 +121,37 @@ const typeCommand = (args: { text: string }) => {
     }
 
     return vscode.commands.executeCommand("default:type", args);
+}
+
+const backspaceCommand = () => {
+    if (!shouldPerformOvertype() || !configuration.hardBackspace)
+        return vscode.commands.executeCommand("deleteLeft");
+
+    const editor = vscode.window.activeTextEditor
+    if (editor) {
+        let selection = editor.selection
+        if (selection.isEmpty) {
+            // select the character to the left of the cursor
+            selection = new vscode.Selection(
+                selection.start.translate(0, -1),
+                selection.start
+            )
+        }
+
+        // replace text selection with spaces
+        const text = editor.document.getText(selection)
+        editor.edit((editBuilder) => {
+            editBuilder.replace(selection, " ".repeat(text.length))
+        })
+
+        // move the cursor to the left if the original selection was empty
+        if (editor.selection.isEmpty) {
+            const newPos = editor.selection.start.translate(0, -1)
+            editor.selection = new vscode.Selection(newPos, newPos)
+        }
+    }
+
+    return
 }
 
 const pasteCommand = (args: { text: string, pasteOnNewLine: boolean }) => {
