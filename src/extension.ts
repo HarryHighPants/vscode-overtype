@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { overtypeBeforePaste, overtypeBeforeType } from "./behavior";
+import { overtypeBeforeBackspace, overtypeBeforePaste, overtypeBeforeType } from "./behavior";
 import { configuration, reloadConfiguration } from "./configuration";
 import { getMode, resetModes, toggleMode } from "./mode";
 import { createStatusBarItem, destroyStatusBarItem, updateStatusBarItem } from "./statusBarItem";
@@ -124,34 +124,15 @@ const typeCommand = (args: { text: string }) => {
 }
 
 const backspaceCommand = () => {
-    if (!shouldPerformOvertype() || !configuration.hardBackspace)
-        return vscode.commands.executeCommand("deleteLeft");
-
-    const editor = vscode.window.activeTextEditor
-    if (editor) {
-        let selection = editor.selection
-        if (selection.isEmpty) {
-            // select the character to the left of the cursor
-            selection = new vscode.Selection(
-                selection.start.translate(0, -1),
-                selection.start
-            )
+    if (shouldPerformOvertype() && configuration.hardBackspace) {
+        const editor = vscode.window.activeTextEditor
+        if (editor) {
+            overtypeBeforeBackspace(editor)
         }
-
-        // replace text selection with spaces
-        const text = editor.document.getText(selection)
-        editor.edit((editBuilder) => {
-            editBuilder.replace(selection, " ".repeat(text.length))
-        })
-
-        // move the cursor to the left if the original selection was empty
-        if (editor.selection.isEmpty) {
-            const newPos = editor.selection.start.translate(0, -1)
-            editor.selection = new vscode.Selection(newPos, newPos)
-        }
+        return
     }
 
-    return
+    return vscode.commands.executeCommand("default:deleteLeft");
 }
 
 const pasteCommand = (args: { text: string, pasteOnNewLine: boolean }) => {
