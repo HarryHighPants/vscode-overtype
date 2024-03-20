@@ -132,7 +132,7 @@ const backspaceCommand = () => {
         return
     }
 
-    return vscode.commands.executeCommand("default:deleteLeft");
+    return vscode.commands.executeCommand("deleteLeft");
 }
 
 const pasteCommand = (args: { text: string, pasteOnNewLine: boolean }) => {
